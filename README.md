@@ -12,8 +12,10 @@ Vite**. See [`spec.md`](./spec.md) for the original product spec.
   OGG/Opus, WAV, M4A) in the background, in parallel, streaming songs into the UI as
   they're found. Comfortable with tens of thousands of tracks (the list is virtualized).
 - **Automatic ranking** from how you listen:
-  - thumbs-up `+10` (toggle), skip within 30s `-2`, skip within 60s `-1`, play to the
-    end `+1`. Every song's rank and liked state shows on every row and in the player bar.
+  - thumbs-up `+10` (toggle), play to the end `+1`, and a skip penalty based on the
+    **fraction of the track heard** (so short songs aren't unfairly punished):
+    `<25% → -2`, `25–50% → -1`, `50–90% → 0`, `≥90% → +1` (counts as a full play).
+    Every song's rank and liked state shows on every row and in the player bar.
 - **Smart playlists** — All Songs, Liked, Ranked, Random Unranked — plus your own
   custom playlists.
 - **FFT bar visualizer** (on by default, toggle with `v`).

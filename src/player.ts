@@ -152,14 +152,20 @@ export class Player {
     this.cb.onScored?.();
   }
 
-  /** Apply the skip penalty to the active track if it was left before the end. */
+  /** Apply the skip score to the active track if it was left before the end. The
+   *  delta is based on the fraction heard, so a near-complete skip can score +1. */
   private commitPendingSkip() {
     const song = this.active;
     if (!song || this.endedNaturally) return;
     if (this.audio.readyState === 0) return; // never actually started
-    const delta = skipDelta(this.audio.currentTime);
+    const duration =
+      isFinite(this.audio.duration) && this.audio.duration > 0
+        ? this.audio.duration
+        : song.duration_secs;
+    const delta = skipDelta(this.audio.currentTime, duration);
     if (delta !== 0) {
-      void db.applyScore(song.id, delta, "skip").then(() => this.cb.onScored?.());
+      const reason = delta > 0 ? "complete" : "skip";
+      void db.applyScore(song.id, delta, reason).then(() => this.cb.onScored?.());
     }
   }
 
