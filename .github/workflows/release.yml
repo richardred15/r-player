@@ -92,7 +92,9 @@ jobs:
           cp packaging/PKGBUILD "$BUILD/"
           cp arch-input/r-player arch-input/r-player.desktop arch-input/icon-*.png "$BUILD/"
           chown -R builder:builder "$BUILD"
-          sudo -u builder bash -c "cd $BUILD && PKGVER='$VERSION' makepkg -f --noconfirm"
+          # --nodeps: this is a repackage of a prebuilt binary (no build step), so the
+          # runtime deps don't need to be installed in the container to build the pkg.
+          sudo -u builder bash -c "cd $BUILD && PKGVER='$VERSION' makepkg -f --noconfirm --nodeps"
           cp "$BUILD"/*.pkg.tar.zst .
 
       - name: Upload to release
