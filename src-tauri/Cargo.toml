@@ -3,6 +3,7 @@ name = "r-player"
 version = "0.1.0"
 description = "R-Player music player"
 authors = ["Richard"]
+license = "MIT"
 edition = "2021"
 
 [lib]
