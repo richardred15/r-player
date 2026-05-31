@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>R-Player</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div id="app">
+      <!-- Sidebar: playlists -->
+      <aside id="sidebar">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span class="brand-name">R-Player</span>
+        </div>
+
+        <nav id="default-playlists" class="playlist-group"></nav>
+
+        <div class="playlist-group-header">
+          <span>Playlists</span>
+          <button id="new-playlist-btn" class="icon-btn" title="New playlist (n)"></button>
+        </div>
+        <nav id="custom-playlists" class="playlist-group"></nav>
+
+        <div class="sidebar-footer">
+          <div id="scan-status" hidden>
+            <div class="scan-bar"><div id="scan-bar-fill"></div></div>
+            <span id="scan-text" class="muted"></span>
+          </div>
+          <button id="choose-library-btn" class="ghost-btn" title="Choose music library folder">
+            Music library…
+          </button>
+          <button id="rescan-btn" class="ghost-btn" title="Rescan library">Rescan</button>
+          <button id="reset-ranks-btn" class="ghost-btn" title="Reset all ranks">Reset ranks</button>
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <main id="content">
+        <header id="content-header">
+          <div class="content-title">
+            <h1 id="view-title">All Songs</h1>
+            <span id="view-count" class="muted"></span>
+          </div>
+          <div class="content-actions">
+            <input id="search-input" type="search" placeholder="Search… (/)" />
+            <button id="shuffle-btn" class="toggle-btn" title="Shuffle (s)"></button>
+            <button id="loop-btn" class="toggle-btn" title="Loop (r)"></button>
+            <button id="visualizer-btn" class="toggle-btn" title="Visualizer (v)"></button>
+          </div>
+        </header>
+
+        <div id="track-list-wrap">
+          <table id="track-list">
+            <thead>
+              <tr>
+                <th class="col-index">#</th>
+                <th class="col-title">Title</th>
+                <th class="col-artist">Artist</th>
+                <th class="col-album">Album</th>
+                <th class="col-rank" title="Score">Rank</th>
+                <th class="col-like"></th>
+                <th class="col-dur">Time</th>
+                <th class="col-more"></th>
+              </tr>
+            </thead>
+            <tbody id="track-list-body"></tbody>
+          </table>
+          <div id="empty-state" class="empty-state" hidden></div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Now-playing bar -->
+    <footer id="now-playing">
+      <canvas id="visualizer" hidden></canvas>
+      <div class="np-track">
+        <img id="np-cover" class="np-cover" alt="" />
+        <div class="np-meta">
+          <div id="np-title" class="np-title">—</div>
+          <div id="np-artist" class="np-artist muted"></div>
+        </div>
+        <div class="np-badges">
+          <span id="np-rank" class="rank-badge" title="Score"></span>
+          <button id="np-like" class="like-btn" title="Thumbs up (l)"></button>
+        </div>
+      </div>
+
+      <div class="np-controls">
+        <div class="np-buttons">
+          <button id="prev-btn" class="ctl-btn" title="Previous (←)"></button>
+          <button id="play-btn" class="ctl-btn play" title="Play/Pause (space)"></button>
+          <button id="next-btn" class="ctl-btn" title="Next (→)"></button>
+        </div>
+        <div class="np-seek">
+          <span id="np-elapsed" class="time">0:00</span>
+          <input id="seek" type="range" min="0" max="1000" value="0" />
+          <span id="np-duration" class="time">0:00</span>
+        </div>
+      </div>
+
+      <div class="np-volume">
+        <span class="vol-icon"></span>
+        <input id="volume" type="range" min="0" max="100" value="100" />
+      </div>
+    </footer>
+
+    <!-- Audio element (Web Audio source) -->
+    <audio id="audio" crossorigin="anonymous"></audio>
+
+    <!-- Modal host -->
+    <div id="modal-root" hidden>
+      <div id="modal-backdrop"></div>
+      <div id="modal-card" role="dialog" aria-modal="true">
+        <header id="modal-header">
+          <h2 id="modal-title"></h2>
+          <button id="modal-close" class="icon-btn" title="Close (Esc)"></button>
+        </header>
+        <div id="modal-body"></div>
+        <footer id="modal-footer"></footer>
+      </div>
+    </div>
+  </body>
+</html>
