@@ -39,9 +39,7 @@ struct DbUrl(String);
 /// old config-dir location so the user keeps their library/scores. Returns the
 /// `sqlite:<abs path>` connection string.
 fn resolve_db_url(identifier: &str) -> String {
-    let data_dir = dirs::data_dir()
-        .expect("no data dir")
-        .join(identifier);
+    let data_dir = dirs::data_dir().expect("no data dir").join(identifier);
     let _ = std::fs::create_dir_all(&data_dir);
     let db_file = data_dir.join("r-player.db");
 
@@ -183,7 +181,7 @@ pub fn run() {
             }
         })
         .setup(|app| {
-            media::init(&app.handle());
+            media::init(app.handle());
             let audio = audio_server::start().unwrap_or_else(|e| {
                 eprintln!("audio server failed to start: {e}");
                 AudioServer {

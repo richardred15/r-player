@@ -101,23 +101,23 @@ pub fn set_now_playing(
 }
 
 #[tauri::command]
-pub fn set_playback_state(
-    app: AppHandle,
-    playing: bool,
-    position_secs: f64,
-) -> Result<(), String> {
+pub fn set_playback_state(app: AppHandle, playing: bool, position_secs: f64) -> Result<(), String> {
     let state = app.state::<MediaState>();
     let mut guard = state.controls.lock().map_err(|e| e.to_string())?;
     let Some(controls) = guard.as_mut() else {
         return Ok(());
     };
 
-    let progress = Some(MediaPosition(Duration::from_secs_f64(position_secs.max(0.0))));
+    let progress = Some(MediaPosition(Duration::from_secs_f64(
+        position_secs.max(0.0),
+    )));
     let playback = if playing {
         MediaPlayback::Playing { progress }
     } else {
         MediaPlayback::Paused { progress }
     };
 
-    controls.set_playback(playback).map_err(|e| format!("{e:?}"))
+    controls
+        .set_playback(playback)
+        .map_err(|e| format!("{e:?}"))
 }

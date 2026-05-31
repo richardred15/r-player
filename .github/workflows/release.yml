@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  bundles:
+    name: Linux bundles (AppImage / deb / rpm)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
+            libayatana-appindicator3-dev libdbus-1-dev libssl-dev libxdo-dev \
+            build-essential curl wget file
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build bundles and create release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ env.TAG }}
+          releaseName: "R-Player ${{ env.TAG }}"
+          releaseDraft: true
+          prerelease: false
+          args: --bundles appimage,deb,rpm
+
+      - name: Stage binary + icons for the Arch package job
+        run: |
+          mkdir -p arch-input
+          cp src-tauri/target/release/r-player arch-input/
+          cp packaging/r-player.desktop arch-input/
+          cp src-tauri/icons/32x32.png       arch-input/icon-32.png
+          cp src-tauri/icons/64x64.png       arch-input/icon-64.png
+          cp src-tauri/icons/128x128.png     arch-input/icon-128.png
+          cp src-tauri/icons/128x128@2x.png  arch-input/icon-256.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-input
+          path: arch-input/
+
+  arch:
+    name: Arch package (.pkg.tar.zst)
+    needs: bundles
+    runs-on: ubuntu-22.04
+    container: archlinux:base-devel
+    steps:
+      - name: Install tooling
+        run: pacman -Sy --noconfirm git github-cli
+
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: arch-input
+          path: arch-input
+
+      - name: Build package with makepkg
+        run: |
+          set -eux
+          VERSION="${TAG#v}"
+          # makepkg refuses to run as root; build as an unprivileged user.
+          useradd -m builder
+          BUILD=/home/builder/pkg
+          install -d -o builder "$BUILD"
+          cp packaging/PKGBUILD "$BUILD/"
+          cp arch-input/r-player arch-input/r-player.desktop arch-input/icon-*.png "$BUILD/"
+          chown -R builder:builder "$BUILD"
+          sudo -u builder bash -c "cd $BUILD && PKGVER='$VERSION' makepkg -f --noconfirm"
+          cp "$BUILD"/*.pkg.tar.zst .
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$TAG" ./*.pkg.tar.zst --clobber --repo "$GITHUB_REPOSITORY"

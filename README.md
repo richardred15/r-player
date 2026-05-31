@@ -1,5 +1,7 @@
 # R-Player
 
+[![CI](https://github.com/richardred15/r-player/actions/workflows/ci.yml/badge.svg)](https://github.com/richardred15/r-player/actions/workflows/ci.yml)
+
 A clean, modern desktop music player with automatic, listening-based song ranking
 and full OS integration. Built with **Tauri v2** (Rust) and **Vanilla TypeScript +
 Vite**. See [`spec.md`](./spec.md) for the original product spec.
@@ -34,6 +36,25 @@ Vite**. See [`spec.md`](./spec.md) for the original product spec.
 | `←` | Previous / restart | `v` | Toggle visualizer |
 | `l` | Thumbs up current track | `/` | Focus search |
 | `n` | New playlist | `Esc` | Close modal |
+
+## Install
+
+Grab a build from the [Releases](https://github.com/richardred15/r-player/releases)
+page (Linux x86_64):
+
+```bash
+# Arch / CachyOS / Manjaro
+sudo pacman -U r-player-*-x86_64.pkg.tar.zst
+
+# Debian / Ubuntu
+sudo apt install ./R-Player_*_amd64.deb
+
+# Fedora / RHEL
+sudo dnf install ./R-Player-*.x86_64.rpm
+
+# Any distro — AppImage (no install)
+chmod +x R-Player_*_amd64.AppImage && ./R-Player_*_amd64.AppImage
+```
 
 ## Development
 

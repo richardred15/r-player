@@ -1,0 +1,30 @@
+# Maintainer: Richard R <richardred15@gmail.com>
+#
+# Binary package: repackages the prebuilt x86_64 release binary that CI produces.
+# Built in the release workflow inside an archlinux container. PKGVER is provided
+# by the workflow (the release tag without the leading "v").
+pkgname=r-player
+pkgver=${PKGVER:-0.0.0}
+pkgrel=1
+pkgdesc="A clean, modern desktop music player with automatic listening-based ranking"
+arch=('x86_64')
+url="https://github.com/richardred15/r-player"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3' 'dbus' 'hicolor-icon-theme')
+options=('!strip' '!debug')
+source=('r-player'
+        'r-player.desktop'
+        'icon-32.png'
+        'icon-64.png'
+        'icon-128.png'
+        'icon-256.png')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "$srcdir/r-player" "$pkgdir/usr/bin/r-player"
+  install -Dm644 "$srcdir/r-player.desktop" "$pkgdir/usr/share/applications/r-player.desktop"
+  install -Dm644 "$srcdir/icon-32.png"  "$pkgdir/usr/share/icons/hicolor/32x32/apps/r-player.png"
+  install -Dm644 "$srcdir/icon-64.png"  "$pkgdir/usr/share/icons/hicolor/64x64/apps/r-player.png"
+  install -Dm644 "$srcdir/icon-128.png" "$pkgdir/usr/share/icons/hicolor/128x128/apps/r-player.png"
+  install -Dm644 "$srcdir/icon-256.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/r-player.png"
+}

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=R-Player
+Comment=A clean, modern music player with automatic listening-based ranking
+Exec=r-player
+Icon=r-player
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+StartupWMClass=r-player
