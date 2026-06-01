@@ -192,24 +192,49 @@ export function updateNowPlaying(song: Song | null, playing: boolean): void {
 
   if (!song) {
     cover.src = coverSrc(null);
-    title.textContent = "—";
+    title.innerHTML = `<span class="marquee-inner">—</span>`;
     artist.textContent = "";
     rank.textContent = "";
     rank.className = "rank-badge";
     like.innerHTML = icon("heart", { size: 18 });
     like.classList.remove("liked");
+    refreshNowPlayingMarquee();
     return;
   }
 
   cover.src = coverSrc(song.cover_path);
-  title.textContent = song.title;
+  title.innerHTML = `<span class="marquee-inner">${escapeHtml(song.title)}</span>`;
   artist.innerHTML = song.artist
-    ? `<span class="cell-link" data-artist="${escapeAttr(song.artist)}">${escapeHtml(song.artist)}</span>`
+    ? `<span class="marquee-inner"><span class="cell-link" data-artist="${escapeAttr(song.artist)}">${escapeHtml(song.artist)}</span></span>`
     : "";
   rank.textContent = `${song.score}`;
   rank.className = `rank-badge ${rankClass(song.score)}`;
   like.innerHTML = icon("heart", { size: 18, fill: !!song.liked });
   like.classList.toggle("liked", !!song.liked);
+  refreshNowPlayingMarquee();
+}
+
+/** Toggle marquee scrolling on the now-playing title/artist when their text
+ *  overflows the available width. Measured after layout via rAF. */
+export function refreshNowPlayingMarquee(): void {
+  requestAnimationFrame(() => {
+    for (const id of ["np-title", "np-artist"]) {
+      const outer = el(id);
+      const inner = outer.querySelector<HTMLElement>(".marquee-inner");
+      outer.classList.remove("marquee");
+      if (!inner) continue;
+      inner.style.removeProperty("--marquee-shift");
+      inner.style.removeProperty("--marquee-dur");
+      const overflow = inner.scrollWidth - outer.clientWidth;
+      if (overflow > 2) {
+        // ~36px/s, doubled for the round trip; floor so short overflows still ease.
+        const dur = Math.max(8, (overflow / 36) * 2);
+        inner.style.setProperty("--marquee-shift", `-${overflow}px`);
+        inner.style.setProperty("--marquee-dur", `${dur}s`);
+        outer.classList.add("marquee");
+      }
+    }
+  });
 }
 
 export function setViewHeader(title: string, count: number): void {

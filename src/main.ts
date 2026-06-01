@@ -8,6 +8,7 @@ import {
 import { startScan } from "./scan";
 import { icon } from "./icons";
 import { initMediaControls, pushNowPlaying, pushPlaybackState } from "./mediaSession";
+import { initNotifications, notifyNowPlaying } from "./notify";
 import { Player } from "./player";
 import { likeDelta } from "./scoring";
 import { registerShortcuts } from "./shortcuts";
@@ -21,6 +22,7 @@ import {
   type ModalButton,
   initTrackList,
   openModal,
+  refreshNowPlayingMarquee,
   renderSidebar,
   renderTrackList,
   hideScanStatus,
@@ -43,7 +45,10 @@ const audio = el<HTMLAudioElement>("audio");
 const player = new Player(audio, {
   onTrack: (song) => {
     nowPlayingId = song?.id ?? null;
-    if (song) void pushNowPlaying(song);
+    if (song) {
+      void pushNowPlaying(song);
+      notifyNowPlaying(song);
+    }
     renderCurrentList();
     void refreshNowPlaying();
   },
@@ -455,6 +460,13 @@ function wireUi(): void {
   // Modal close affordances.
   el("modal-close").addEventListener("click", closeModal);
   el("modal-backdrop").addEventListener("click", closeModal);
+
+  // Re-evaluate the now-playing marquee when the window width changes.
+  let resizeDebounce = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeDebounce);
+    resizeDebounce = window.setTimeout(refreshNowPlayingMarquee, 150);
+  });
 }
 
 // -------------------------------------------------------------- visualizer ---
@@ -530,6 +542,7 @@ async function boot(): Promise<void> {
   });
 
   await initMediaControls(player);
+  await initNotifications();
   await initAudioEndpoint();
 
   // Build the Web Audio analyser graph up front (before any track plays) so the

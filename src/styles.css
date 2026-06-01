@@ -474,6 +474,45 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Marquee for now-playing title/artist when the text is wider than its box.
+   The inner span is measured in updateNowPlaying; if it overflows, `.marquee`
+   is added and it gently scrolls end-to-end and back. */
+.marquee-inner {
+  display: inline-block;
+  white-space: nowrap;
+  max-width: 100%;
+  vertical-align: top;
+}
+.np-title.marquee,
+.np-artist.marquee {
+  text-overflow: clip;
+}
+.np-title.marquee .marquee-inner,
+.np-artist.marquee .marquee-inner {
+  max-width: none;
+  animation: np-marquee var(--marquee-dur, 12s) ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes np-marquee {
+  0%,
+  12% {
+    transform: translateX(0);
+  }
+  50%,
+  62% {
+    transform: translateX(var(--marquee-shift, 0));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .np-title.marquee .marquee-inner,
+  .np-artist.marquee .marquee-inner {
+    animation: none;
+  }
+}
 .np-badges {
   display: flex;
   align-items: center;
