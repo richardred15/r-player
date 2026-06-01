@@ -81,7 +81,7 @@ fn extract_embedded_cover(data: &[u8], mime: Option<&str>, covers_dir: &Path) ->
     Some(out.to_string_lossy().to_string())
 }
 
-fn read_one(path: &Path, covers_dir: &Path) -> SongMeta {
+fn read_one(path: &Path, root: &Path, covers_dir: &Path) -> SongMeta {
     let mut meta = SongMeta {
         path: path.to_string_lossy().to_string(),
         title: file_stem(path),
@@ -93,44 +93,66 @@ fn read_one(path: &Path, covers_dir: &Path) -> SongMeta {
         cover_path: None,
     };
 
-    let tagged = match lofty::read_from_path(path) {
-        Ok(t) => t,
-        Err(_) => {
-            meta.cover_path = sibling_cover(path);
-            return meta;
-        }
-    };
+    // Read embedded tags when the file is parseable (lofty detects format by
+    // content, so a mislabeled extension still works). Untagged/unreadable files
+    // simply fall through to the path-based fallback below.
+    if let Ok(tagged) = lofty::read_from_path(path) {
+        meta.duration_secs = tagged.properties().duration().as_secs_f64();
 
-    meta.duration_secs = tagged.properties().duration().as_secs_f64();
-
-    let tag = tagged.primary_tag().or_else(|| tagged.first_tag());
-    if let Some(tag) = tag {
-        if let Some(t) = tag.title() {
-            if !t.trim().is_empty() {
-                meta.title = t.to_string();
+        let tag = tagged.primary_tag().or_else(|| tagged.first_tag());
+        if let Some(tag) = tag {
+            if let Some(t) = tag.title() {
+                if !t.trim().is_empty() {
+                    meta.title = t.to_string();
+                }
             }
-        }
-        if let Some(a) = tag.artist() {
-            meta.artist = a.to_string();
-        }
-        if let Some(al) = tag.album() {
-            meta.album = al.to_string();
-        }
-        if let Some(aa) = tag.get_string(ItemKey::AlbumArtist) {
-            meta.album_artist = aa.to_string();
-        }
-        if let Some(n) = tag.track() {
-            meta.track_no = n;
-        }
+            if let Some(a) = tag.artist() {
+                meta.artist = a.to_string();
+            }
+            if let Some(al) = tag.album() {
+                meta.album = al.to_string();
+            }
+            if let Some(aa) = tag.get_string(ItemKey::AlbumArtist) {
+                meta.album_artist = aa.to_string();
+            }
+            if let Some(n) = tag.track() {
+                meta.track_no = n;
+            }
 
-        if let Some(pic) = tag.pictures().first() {
-            let mime = pic.mime_type().map(|m| m.as_str());
-            meta.cover_path = extract_embedded_cover(pic.data(), mime, covers_dir);
+            if let Some(pic) = tag.pictures().first() {
+                let mime = pic.mime_type().map(|m| m.as_str());
+                meta.cover_path = extract_embedded_cover(pic.data(), mime, covers_dir);
+            }
         }
     }
 
     if meta.cover_path.is_none() {
         meta.cover_path = sibling_cover(path);
+    }
+
+    // Fall back to the folder layout (root/Artist/Album/song) for any field the
+    // file didn't carry — only fills empties, never overrides real tags.
+    if meta.artist.is_empty() || meta.album.is_empty() {
+        if let Ok(rel) = path.strip_prefix(root) {
+            let segs: Vec<&str> = rel
+                .parent()
+                .map(|p| {
+                    p.components()
+                        .filter_map(|c| c.as_os_str().to_str())
+                        .collect()
+                })
+                .unwrap_or_default();
+            if meta.artist.is_empty() {
+                if let Some(a) = segs.first() {
+                    meta.artist = a.to_string();
+                }
+            }
+            if meta.album.is_empty() {
+                if let Some(al) = segs.get(1) {
+                    meta.album = al.to_string();
+                }
+            }
+        }
     }
 
     meta
@@ -152,6 +174,7 @@ pub fn collect_audio_paths(root: &str) -> Vec<PathBuf> {
 /// batches via `on_batch`. `should_continue` is polled so a superseded scan can
 /// abort early. Returns the number of files processed.
 pub fn scan_streaming(
+    root: &str,
     paths: &[PathBuf],
     covers_dir: PathBuf,
     batch_size: usize,
@@ -166,13 +189,14 @@ pub fn scan_streaming(
     // `tx` is dropped (closing the channel) once all files are processed.
     let covers = &covers_dir;
     let cont = &should_continue;
+    let root_path = Path::new(root);
     std::thread::scope(|scope| {
         scope.spawn(move || {
             paths.par_iter().for_each_with(tx, |tx, path| {
                 if !cont() {
                     return;
                 }
-                let _ = tx.send(read_one(path, covers));
+                let _ = tx.send(read_one(path, root_path, covers));
             });
         });
 

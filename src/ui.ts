@@ -94,8 +94,16 @@ function rowHtml(s: Song, index: number, currentId: number | null, playing: bool
   return `<tr class="track-row ${isCurrent ? "current" : ""}" data-id="${s.id}">
     <td class="col-index">${indexCell}</td>
     <td class="col-title">${escapeHtml(s.title)}</td>
-    <td class="col-artist muted">${escapeHtml(s.artist)}</td>
-    <td class="col-album muted">${escapeHtml(s.album)}</td>
+    <td class="col-artist muted">${
+      s.artist
+        ? `<span class="cell-link" data-artist="${escapeAttr(s.artist)}">${escapeHtml(s.artist)}</span>`
+        : ""
+    }</td>
+    <td class="col-album muted">${
+      s.album
+        ? `<span class="cell-link" data-album="${escapeAttr(s.album)}" data-album-artist="${escapeAttr(s.artist)}">${escapeHtml(s.album)}</span>`
+        : ""
+    }</td>
     <td class="col-rank"><span class="rank-badge ${rankClass(s.score)}">${s.score}</span></td>
     <td class="col-like">
       <button class="like-btn ${s.liked ? "liked" : ""}" data-like="${s.id}" title="Thumbs up">
@@ -195,7 +203,9 @@ export function updateNowPlaying(song: Song | null, playing: boolean): void {
 
   cover.src = coverSrc(song.cover_path);
   title.textContent = song.title;
-  artist.textContent = song.artist;
+  artist.innerHTML = song.artist
+    ? `<span class="cell-link" data-artist="${escapeAttr(song.artist)}">${escapeHtml(song.artist)}</span>`
+    : "";
   rank.textContent = `${song.score}`;
   rank.className = `rank-badge ${rankClass(song.score)}`;
   like.innerHTML = icon("heart", { size: 18, fill: !!song.liked });

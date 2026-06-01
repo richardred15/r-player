@@ -82,17 +82,26 @@ function titleFor(view: ViewId): string {
       return "Random Unranked";
     case "custom":
       return view.name;
+    case "artist":
+      return view.name;
+    case "album":
+      return view.artist ? `${view.album} — ${view.artist}` : view.album;
   }
 }
 
 let lastViewKey = "";
+let prevView: ViewId | null = null;
 
-async function loadView(view: ViewId): Promise<void> {
+async function loadView(view: ViewId, fromBack = false): Promise<void> {
   const key = JSON.stringify(view);
+  // Remember where we came from so artist/album views get a Back button. Don't
+  // record history when navigating via Back itself, or re-loading the same view.
+  if (!fromBack && key !== lastViewKey) prevView = currentView;
   currentView = view;
   currentSongs = await db.songsForView(view);
   setViewHeader(titleFor(view), currentSongs.length);
   renderSidebar(currentView, playlists);
+  setBackVisible(view.kind === "artist" || view.kind === "album");
   renderCurrentList();
   // Only jump back to the top when the user actually switches views — not on the
   // periodic re-render during a live scan.
@@ -102,8 +111,16 @@ async function loadView(view: ViewId): Promise<void> {
   }
 }
 
+function goBack(): void {
+  void loadView(prevView ?? { kind: "all" }, true);
+}
+
 function renderCurrentList(): void {
   renderTrackList(currentSongs, player.current?.id ?? null, player.playing);
+}
+
+function setBackVisible(visible: boolean): void {
+  el("back-btn").hidden = !visible;
 }
 
 /** Patch visible rows' score/liked in place (no reorder) after playback scoring. */
@@ -358,7 +375,7 @@ function wireUi(): void {
     });
   }
 
-  // Track list: double-click to play, like, more menu.
+  // Track list: double-click to play; single-click on like / more / artist / album.
   el("track-list-body").addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
     const like = target.closest<HTMLElement>("[data-like]");
@@ -369,6 +386,20 @@ function wireUi(): void {
     const more = target.closest<HTMLElement>("[data-more]");
     if (more) {
       void openTrackMenu(Number(more.dataset.more));
+      return;
+    }
+    const artist = target.closest<HTMLElement>("[data-artist]");
+    if (artist?.dataset.artist) {
+      void loadView({ kind: "artist", name: artist.dataset.artist });
+      return;
+    }
+    const album = target.closest<HTMLElement>("[data-album]");
+    if (album?.dataset.album) {
+      void loadView({
+        kind: "album",
+        album: album.dataset.album,
+        artist: album.dataset.albumArtist ?? "",
+      });
     }
   });
   el("track-list-body").addEventListener("dblclick", (e) => {
@@ -389,6 +420,12 @@ function wireUi(): void {
   el("np-like").addEventListener("click", () => {
     if (nowPlayingId != null) void toggleLike(nowPlayingId);
   });
+  // Now-playing artist → artist view.
+  el("np-artist").addEventListener("click", (e) => {
+    const link = (e.target as HTMLElement).closest<HTMLElement>("[data-artist]");
+    if (link?.dataset.artist) void loadView({ kind: "artist", name: link.dataset.artist });
+  });
+  el("back-btn").addEventListener("click", goBack);
 
   // Toggles.
   el("shuffle-btn").addEventListener("click", () => {
@@ -456,6 +493,7 @@ function initStaticIcons(): void {
     if (e) e.innerHTML = html;
   };
   set(".brand-mark", icon("music", { size: 20 }));
+  set("#back-btn", icon("back", { size: 20 }));
   set("#new-playlist-btn", icon("plus"));
   set("#shuffle-btn", icon("shuffle"));
   set("#loop-btn", icon("repeat"));

@@ -127,6 +127,23 @@ export async function songsForView(view: ViewId): Promise<Song[]> {
          ORDER BY ps.position, s.title`,
         [view.id],
       );
+    case "artist":
+      // A flat discography, grouped visually by the album column.
+      return d.select<Song[]>(
+        `SELECT ${SONG_COLUMNS} FROM songs WHERE artist = $1 ORDER BY album, track_no, title`,
+        [view.name],
+      );
+    case "album":
+      // Scope by artist too, so same-named albums by different artists don't merge.
+      return view.artist
+        ? d.select<Song[]>(
+            `SELECT ${SONG_COLUMNS} FROM songs WHERE album = $1 AND artist = $2 ORDER BY track_no, title`,
+            [view.album, view.artist],
+          )
+        : d.select<Song[]>(
+            `SELECT ${SONG_COLUMNS} FROM songs WHERE album = $1 ORDER BY track_no, title`,
+            [view.album],
+          );
   }
 }
 

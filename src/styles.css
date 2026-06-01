@@ -213,7 +213,7 @@ button {
 }
 .content-title {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
 }
 .content-title h1 {
@@ -358,6 +358,16 @@ button {
   50% {
     opacity: 0.3;
   }
+}
+
+/* Clickable artist / album text (rows + now-playing). */
+.cell-link {
+  cursor: pointer;
+}
+.cell-link:hover {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
 }
 
 .rank-badge {

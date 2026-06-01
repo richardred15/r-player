@@ -100,18 +100,25 @@ fn run_scan(
     };
 
     let mut scanned: u64 = 0;
-    library::scan_streaming(&paths, covers_dir, BATCH_SIZE, should_continue, |batch| {
-        scanned += batch.len() as u64;
-        let _ = app.emit(
-            "scan:progress",
-            json!({
-                "scanId": scan_id,
-                "scanned": scanned,
-                "total": total,
-                "batch": batch,
-            }),
-        );
-    });
+    library::scan_streaming(
+        path,
+        &paths,
+        covers_dir,
+        BATCH_SIZE,
+        should_continue,
+        |batch| {
+            scanned += batch.len() as u64;
+            let _ = app.emit(
+                "scan:progress",
+                json!({
+                    "scanId": scan_id,
+                    "scanned": scanned,
+                    "total": total,
+                    "batch": batch,
+                }),
+            );
+        },
+    );
 
     let _ = app.emit("scan:done", json!({ "scanId": scan_id, "total": total }));
     total

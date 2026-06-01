@@ -34,10 +34,13 @@ export interface Playlist {
   created_at: number;
 }
 
-/** Identifies which view is loaded: a built-in smart playlist or a custom one. */
+/** Identifies which view is loaded: a built-in smart playlist, a custom playlist,
+ *  or a transient artist/album view reached by clicking a track's artist/album. */
 export type ViewId =
   | { kind: "all" }
   | { kind: "liked" }
   | { kind: "ranked" }
   | { kind: "unranked" }
-  | { kind: "custom"; id: number; name: string };
+  | { kind: "custom"; id: number; name: string }
+  | { kind: "artist"; name: string }
+  | { kind: "album"; album: string; artist: string };

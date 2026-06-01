@@ -2,6 +2,7 @@
 // the virtualized row templates (plain string interpolation, no DOM scanning).
 import {
   AudioLines,
+  ChevronLeft,
   Dice5,
   EllipsisVertical,
   FolderOpen,
@@ -51,6 +52,7 @@ const ICONS = {
   reset: RotateCcw,
   folder: FolderOpen,
   refresh: RefreshCw,
+  back: ChevronLeft,
 } as const;
 
 export type IconName = keyof typeof ICONS;
